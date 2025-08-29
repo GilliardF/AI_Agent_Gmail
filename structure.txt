@@ -1,0 +1,14 @@
+/AI_Agent_Gmail/
+└── auth_service/
+    ├── __init__.py
+    ├── database.py
+    └── security.py
+└── sql/
+    └── schema.sql
+├── .env
+├── .gitignore
+├── config.py
+├── docker-compose.yml
+├── main.py
+├── requirements.txt
+└── structure.txt
