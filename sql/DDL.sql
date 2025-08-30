@@ -1,8 +1,10 @@
 -- Tabela de Contas do Gmail
 CREATE TABLE accounts (
     id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL, -- Senha encriptada pelo Backend
+    encrypted_credentials BYTEA,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP -- Carimbo Data/Hora de Criação
 );
 -- Tabela de Mensagens Recebidas
