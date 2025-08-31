@@ -1,61 +1,69 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-# More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
-
-name: Build and deploy Python app to Azure Web App - gmail-agent
+name: Build and Deploy to Azure
 
 on:
   push:
     branches:
-      - login
+      - login # Aciona na branch 'login'
   workflow_dispatch:
+
+env:
+  # MUDE AQUI com os nomes dos seus recursos do Azure
+  WEB_APP_NAME: ai-agent
+  ACR_NAME: acraigagentgilliard
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read #This is required for actions/checkout
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python version
-        uses: actions/setup-python@v5
+      - name: Log in to Azure
+        uses: azure/login@v1
         with:
-          python-version: '3.13'
+          creds: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_... }} # Use o nome exato do secret que o Azure criou
 
-      - name: Create and start virtual environment
+      - name: Log in to ACR
+        run: az acr login --name ${{ env.ACR_NAME }}
+
+      - name: Build and push image to ACR
         run: |
-          python -m venv venv
-          source venv/bin/activate
-      
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-        
-      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
-
-      - name: Upload artifact for deployment jobs
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-app
-          path: |
-            .
-            !venv/
+          docker build . --file Dockerfile --tag ${{ env.ACR_NAME }}.azurecr.io/ai-agent-gmail:${{ github.sha }}
+          docker push ${{ env.ACR_NAME }}.azurecr.io/ai-agent-gmail:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    
+    environment:
+      name: 'Production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
     steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
+      - name: Log in to Azure
+        uses: azure/login@v1
         with:
-          name: python-app
-      
-      - name: 'Deploy to Azure Web App'
-        uses: azure/webapps-deploy@v3
+          creds: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_... }} # Use o nome exato do secret que o Azure criou
+
+      # Configura as variáveis de ambiente no App Service
+      - name: Set Web App settings
+        uses: Azure/appservice-settings@v1
+        with:
+          app-name: ${{ env.WEB_APP_NAME }}
+          app-settings-json: |
+            [
+              { "name": "DOCKER_REGISTRY_SERVER_URL", "value": "https://${{ env.ACR_NAME }}.azurecr.io" },
+              { "name": "POSTGRES_DB", "value": "${{ secrets.POSTGRES_DB }}" },
+              { "name": "POSTGRES_USER", "value": "${{ secrets.POSTGRES_USER }}" },
+              { "name": "POSTGRES_PASSWORD", "value": "${{ secrets.POSTGRES_PASSWORD }}" },
+              { "name": "POSTGRES_HOST", "value": "${{ secrets.POSTGRES_HOST }}" },
+              { "name": "POSTGRES_PORT", "value": "5432" },
+              { "name": "ENCRYPTION_KEY", "value": "${{ secrets.ENCRYPTION_KEY }}" },
+              { "name": "WEBSITES_PORT", "value": "8000" }
+            ]
+
+      # Faz o deploy da imagem do ACR para o App Service
+      - name: Deploy to App Service
         id: deploy-to-webapp
+        uses: azure/webapps-deploy@v2
         with:
-          app-name: 'gmail-agent'
-          slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_D48F9E057997479D9F484CF39E1D81BF }}
+          app-name: ${{ env.WEB_APP_NAME }}
+          images: ${{ env.ACR_NAME }}.azurecr.io/ai-agent-gmail:${{ github.sha }}
