@@ -1,71 +1,84 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-# More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
-
-name: Build and deploy Python app to Azure Web App - ai-agent
+name: Build and Deploy AI Agent to Azure
 
 on:
   push:
     branches:
-      - login
+      - login  # Aciona na branch 'login'
   workflow_dispatch:
 
+env:
+  # Valores preenchidos com base na sua imagem do Azure Portal
+  WEB_APP_NAME: ai-agent
+  ACR_NAME: acraigagentgilliard
+  RESOURCE_GROUP: ai_agent
+  
+  # Nome da imagem Docker a ser criada
+  DOCKER_IMAGE_NAME: ai-agent-gmail
+
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read #This is required for actions/checkout
-
+    
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Python version
-        uses: actions/setup-python@v5
+      # Loga no Azure usando o método seguro OpenID Connect.
+      # Os secrets de CLIENTID, TENANTID e SUBSCRIPTIONID são criados e gerenciados pelo Azure quando você conecta o GitHub.
+      # VERIFIQUE O NOME EXATO DESSES SECRETS NAS CONFIGURAÇÕES DO SEU REPOSITÓRIO.
+      - name: Log in to Azure
+        uses: azure/login@v2
         with:
-          python-version: '3.13'
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_... }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_... }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_... }}
 
-      - name: Create and start virtual environment
+      # Loga no seu Azure Container Registry (ACR)
+      - name: Log in to ACR
+        run: az acr login --name ${{ env.ACR_NAME }}
+
+      # Constrói a imagem Docker e envia para o ACR
+      - name: Build and push image to ACR
         run: |
-          python -m venv venv
-          source venv/bin/activate
-      
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-        
-      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
-
-      - name: Upload artifact for deployment jobs
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-app
-          path: |
-            .
-            !venv/
+          docker build . --file Dockerfile --tag ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
+          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
-    needs: build
-    permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+    needs: build-and-push # Só roda depois que o job anterior terminar com sucesso
+    environment:
+      name: 'Production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
-        with:
-          name: python-app
-      
-      - name: Login to Azure
+      - name: Log in to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_975A6E4329904037B23281F6248D65C2 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_A694ACE8E975417A961D4AAEE267B23C }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_FDEFE3BABDD146E78690EE027129EEE1 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_... }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_... }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_... }}
 
-      - name: 'Deploy to Azure Web App'
-        uses: azure/webapps-deploy@v3
-        id: deploy-to-webapp
+      # Configura TODAS as variáveis de ambiente que sua aplicação precisa
+      - name: Set Web App settings
+        uses: Azure/appservice-settings@v1
         with:
-          app-name: 'ai-agent'
-          slot-name: 'Production'
-          
+          app-name: ${{ env.WEB_APP_NAME }}
+          app-settings-json: |
+            [
+              { "name": "DOCKER_REGISTRY_SERVER_URL", "value": "https:// ${{ env.ACR_NAME }}.azurecr.io" },
+              { "name": "POSTGRES_DB", "value": "${{ secrets.POSTGRES_DB }}" },
+              { "name": "POSTGRES_USER", "value": "${{ secrets.POSTGRES_USER }}" },
+              { "name": "POSTGRES_PASSWORD", "value": "${{ secrets.POSTGRES_PASSWORD }}" },
+              { "name": "POSTGRES_HOST", "value": "${{ secrets.POSTGRES_HOST }}" },
+              { "name": "POSTGRES_PORT", "value": "5432" },
+              { "name": "ENCRYPTION_KEY", "value": "${{ secrets.ENCRYPTION_KEY }}" },
+              { "name": "WEBSITES_PORT", "value": "8000" }
+            ]
+
+      # Pega a nova imagem do ACR e a implanta no App Service
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.WEB_APP_NAME }}
+          images: ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
