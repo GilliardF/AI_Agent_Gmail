@@ -1,0 +1,77 @@
+name: Build and Deploy to Azure
+
+on:
+  push:
+    branches:
+      - login  # Aciona o deploy em cada push para a branch 'login'
+  workflow_dispatch:
+
+env:
+  # --- CONFIGURE ESTAS 3 VARIÁVEIS ---
+  WEB_APP_NAME: <NOME_DO_SEU_WEB_APP_AQUI>
+  ACR_NAME: <NOME_DO_SEU_ACR_AQUI>
+  RESOURCE_GROUP: ai_agent # Este já está correto
+
+  # --- Não precisa mudar abaixo ---
+  DOCKER_IMAGE_NAME: ai-agent-gmail
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Loga no Azure usando o Publish Profile (secret criado pelo Azure)
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_... }} # <-- MUDE para o nome exato do seu secret de publish profile
+
+      # Loga no seu Azure Container Registry (ACR)
+      - name: Log in to ACR
+        run: az acr login --name ${{ env.ACR_NAME }}
+
+      # Constrói a imagem Docker e envia para o ACR
+      # Usa o hash do commit como tag para garantir uma imagem única por alteração
+      - name: Build and push image to ACR
+        run: |
+          docker build . --file Dockerfile --tag ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
+          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build # Este job só roda depois que o job 'build' terminar com sucesso
+    environment:
+      name: 'Production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+    steps:
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_... }} # <-- MUDE para o nome exato do seu secret de publish profile
+
+      # Configura TODAS as variáveis de ambiente que sua aplicação precisa para rodar
+      - name: Set Web App settings
+        uses: Azure/appservice-settings@v1
+        with:
+          app-name: ${{ env.WEB_APP_NAME }}
+          app-settings-json: |
+            [
+              { "name": "DOCKER_REGISTRY_SERVER_URL", "value": "https:// ${{ env.ACR_NAME }}.azurecr.io" },
+              { "name": "POSTGRES_DB", "value": "${{ secrets.POSTGRES_DB }}" },
+              { "name": "POSTGRES_USER", "value": "${{ secrets.POSTGRES_USER }}" },
+              { "name": "POSTGRES_PASSWORD", "value": "${{ secrets.POSTGRES_PASSWORD }}" },
+              { "name": "POSTGRES_HOST", "value": "${{ secrets.POSTGRES_HOST }}" },
+              { "name": "POSTGRES_PORT", "value": "5432" },
+              { "name": "ENCRYPTION_KEY", "value": "${{ secrets.ENCRYPTION_KEY }}" },
+              { "name": "WEBSITES_PORT", "value": "8000" }
+            ]
+
+      # Pega a nova imagem do ACR e a implanta no App Service
+      - name: Deploy to App Service
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.WEB_APP_NAME }}
+          images: ${{ env.ACR_NAME }}.azurecr.io/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
