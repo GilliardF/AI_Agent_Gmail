@@ -8,8 +8,8 @@ on:
 
 env:
   # --- CONFIGURE ESTAS 3 VARIÁVEIS ---
-  WEB_APP_NAME: <NOME_DO_SEU_WEB_APP_AQUI>
-  ACR_NAME: <NOME_DO_SEU_ACR_AQUI>
+  WEB_APP_NAME: ai-agent
+  ACR_NAME: acraigagentgilliard
   RESOURCE_GROUP: ai_agent # Este já está correto
 
   # --- Não precisa mudar abaixo ---
@@ -25,7 +25,7 @@ jobs:
       - name: Log in to Azure
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_... }} # <-- MUDE para o nome exato do seu secret de publish profile
+          creds: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_D48F9E057997479D9F484CF39E1D81BF }} # <-- MUDE para o nome exato do seu secret de publish profile
 
       # Loga no seu Azure Container Registry (ACR)
       - name: Log in to ACR
@@ -49,7 +49,7 @@ jobs:
       - name: Log in to Azure
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_... }} # <-- MUDE para o nome exato do seu secret de publish profile
+          creds: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_D48F9E057997479D9F484CF39E1D81BF }} # <-- MUDE para o nome exato do seu secret de publish profile
 
       # Configura TODAS as variáveis de ambiente que sua aplicação precisa para rodar
       - name: Set Web App settings
