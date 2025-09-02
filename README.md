@@ -5,7 +5,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-blue?logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-28+-blue?logo=docker&logoColor=white)
 
-Este projeto é uma API robusta construída com FastAPI para criar e gerenciar Agentes de Inteligência Artificial que podem interagir com contas do Gmail. A Fase 1 foca na gestão segura de agentes e no armazenamento criptografado de suas credenciais de API.
+Este projeto é uma API construída com FastAPI para criar e gerenciar Agentes de Inteligência Artificial que podem interagir com contas do Gmail. A Fase 1 foca na gestão segura de agentes e no armazenamento criptografado de suas credenciais de API.
 
 ## Estrutura de Arquivos
 
@@ -26,10 +26,10 @@ AI_Agent_Gmail/
 │   ├── schemas.py          # "Contratos" da API com Pydantic (validação de dados)
 │   └── security.py         # Lógica de hashing (Argon2) e criptografia (Fernet)
 │
-├── .env                    # Arquivo para armazenar segredos e configurações (NÃO versionar)
-├── .gitignore              # Especifica arquivos a serem ignorados pelo Git
+├── .env
+├── .gitignore              
 ├── docker-compose.yml      # Configuração para orquestrar os serviços (API e DB) com Docker
-└── requirements.txt        # Lista de dependências Python do projeto
+└── requirements.txt        
 ```
 
 ## Funcionalidades (Fase 1)
@@ -42,11 +42,11 @@ AI_Agent_Gmail/
 
 ## Configuração do Ambiente
 
-Para rodar o projeto, seja localmente ou em deploy, é crucial configurar corretamente as variáveis de ambiente no arquivo `.env`.
+Para rodar o projeto, seja localmente ou em deploy, configure corretamente as variáveis de ambiente no arquivo `.env`.
 
 ### 1. Criando o Arquivo `.env`
 
-Na raiz do projeto, crie um arquivo chamado `.env`. Este arquivo **NÃO** deve ser enviado para o repositório do Git (ele já está no `.gitignore`).
+Na raiz do projeto, crie um arquivo chamado `.env`.
 
 ### 2. Preenchendo as Variáveis de Ambiente
 
@@ -55,11 +55,11 @@ Copie o conteúdo abaixo para o seu arquivo `.env` e substitua os valores pelos 
 ```ini
 # --- Configurações do Banco de Dados ---
 # Substitua com suas credenciais do PostgreSQL
-POSTGRES_DB=DB_Gmail
-POSTGRES_USER=gilliard
+POSTGRES_DB=db-gmail
+POSTGRES_USER=usuario_123
 POSTGRES_PASSWORD=sua_senha_segura_aqui
 POSTGRES_HOST=localhost # Mude para o nome do serviço Docker se estiver usando docker-compose (ex: 'db')
-POSTGRES_PORT=5130
+POSTGRES_PORT=5130 # Mudança de porta por questões de segurança
 
 # --- Configurações de Segurança ---
 # Chave usada para criptografar e descriptografar as credenciais do Gmail.
@@ -100,9 +100,8 @@ Copie a chave gerada e cole-a no valor de `ENCRYPTION_KEY` no seu arquivo `.env`
 
 3.  **Inicie o servidor da API:**
     ```bash
-    uvicorn app.main:app --reload --port 5000
+    uvicorn app.main:app --port 5000
     ```
-    *   `--reload`: O servidor reiniciará automaticamente a cada mudança no código.
     *   `--port 5000`: Define a porta em que a API irá rodar (ajuste se necessário).
 
 4.  **Acesse a API:**
@@ -110,7 +109,7 @@ Copie a chave gerada e cole-a no valor de `ENCRYPTION_KEY` no seu arquivo `.env`
     *   **Documentação Alternativa (ReDoc):** [http://127.0.0.1:5000/redoc](http://127.0.0.1:5000/redoc)
 
 
-### Rodando com Docker (Pronto para Deploy)
+### Rodando com Docker
 
 O `docker-compose.yml` está configurado para iniciar a API e o banco de dados PostgreSQL.
 
