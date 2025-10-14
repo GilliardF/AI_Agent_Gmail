@@ -38,6 +38,7 @@ class ReceivedEmail(Base):
     received_at = Column(DateTime(timezone=True), server_default=func.now())
     is_read = Column(Boolean, server_default='False')
     account = relationship("Account", back_populates="received_emails")
+    summaries = relationship("EmailSummary", back_populates="received_email", cascade="all, delete-orphan")
 
 
 class OutgoingEmail(Base):
@@ -52,3 +53,23 @@ class OutgoingEmail(Base):
     sent_at = Column(DateTime(timezone=True), nullable=True)
     error_message = Column(Text, nullable=True)
     account = relationship("Account", back_populates="outgoing_emails")
+
+
+class ForwardStatusEnum(enum.Enum):
+    pending = 'pending'
+    success = 'success'
+    failed = 'failed'
+
+
+class EmailSummary(Base):
+    __tablename__ = "email_summaries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    received_email_id = Column(Integer, ForeignKey("received_emails.id"), nullable=False, index=True)
+    summary_text = Column(Text, nullable=False)
+    forward_url = Column(String(2048), nullable=False)
+    forward_status = Column(Enum(ForwardStatusEnum), nullable=False, default=ForwardStatusEnum.pending)
+    status_message = Column(Text, nullable=True) # To store potential error messages
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    received_email = relationship("ReceivedEmail", back_populates="summaries")
