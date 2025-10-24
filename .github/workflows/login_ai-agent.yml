@@ -72,7 +72,8 @@ jobs:
               { "name": "POSTGRES_HOST", "value": "${{ secrets.POSTGRES_HOST }}" },
               { "name": "POSTGRES_PORT", "value": "5432" },
               { "name": "ENCRYPTION_KEY", "value": "${{ secrets.ENCRYPTION_KEY }}" },
-              { "name": "WEBSITES_PORT", "value": "8000" }
+              { "name": "WEBSITES_PORT", "value": "8000" },
+              { "name": "GOOGLE_API_KEY", "value": "${{ secrets.GOOGLE_API_KEY }}" }
             ]
 
       # Pega a nova imagem do ACR e a implanta no App Service
