@@ -1,5 +1,3 @@
-# Em services/email_service.py
-
 import base64
 from datetime import datetime
 from email.mime.text import MIMEText # NOVO: Import necessário para criar a resposta do e-mail
@@ -166,3 +164,24 @@ async def process_and_reply_to_emails(db: Session, agent: models.Account):
         print(f"Ocorreu um erro na API do Gmail: {error}")
     except Exception as e:
         print(f"Ocorreu um erro inesperado no processamento de e-mails: {e}")
+        
+def send_new_email(service, to: str, subject: str, body_text: str):
+    """
+    Cria e envia um novo e-mail (não é uma resposta).
+    """
+    try:
+        message = MIMEText(body_text)
+        message['to'] = to
+        message['from'] = 'me'
+        message['subject'] = subject
+
+        raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
+        body = {'raw': raw_message}
+
+        sent_message = service.users().messages().send(userId='me', body=body).execute()
+        print(f"Novo e-mail enviado com sucesso para {to}. Message ID: {sent_message['id']}")
+        return sent_message
+    except HttpError as error:
+        print(f"Ocorreu um erro ao enviar o novo e-mail: {error}")
+        # Lança a exceção para que o endpoint possa tratá-la
+        raise ConnectionError(f"Falha ao enviar e-mail: {error}")

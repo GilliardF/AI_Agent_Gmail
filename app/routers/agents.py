@@ -5,9 +5,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from app import crud, schemas, security
 from app.database import get_db
-
-# 1. --- ALTERADO: Importa a nova função do serviço de e-mail ---
-from app.services.email_service import process_and_reply_to_emails
+from app.services.email_service import process_and_reply_to_emails, send_new_email
 
 router = APIRouter(
     prefix="/agents",
@@ -121,3 +119,27 @@ def google_auth_callback(request: Request, db: Session = Depends(get_db)) -> str
     </html>
     """
     return html_content
+
+
+@router.post("/{agent_id}/emails/send", status_code=status.HTTP_202_ACCEPTED, summary="Enviar um e-mail simples")
+def send_simple_email(agent_id: int, email_data: schemas.SendEmailRequest, db: Session = Depends(get_db)):
+    """
+    Envia um novo e-mail a partir da conta do agente para um destinatário específico.
+    """
+    agent = crud.get_agent_by_id(db, agent_id=agent_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agente não encontrado.")
+    
+    try:
+        service = security.get_agent_gmail_service(agent=agent, db=db)
+        send_new_email(
+            service=service,
+            to=email_data.receiver,
+            subject=email_data.subject,
+            body_text=email_data.body
+        )
+        return {"message": f"E-mail para {email_data.receiver} foi enviado para a fila de envio."}
+    except ConnectionError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Ocorreu um erro inesperado: {str(e)}")

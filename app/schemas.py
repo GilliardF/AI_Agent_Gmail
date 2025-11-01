@@ -75,3 +75,23 @@ class SummarizeAndForwardResponse(BaseModel):
     message: str
     processed_emails: int
     summaries_created: list[EmailSummary]
+
+
+# 1. Schema para a resposta do endpoint de LEITURA de e-mails
+class EmailDetails(BaseModel):
+    id: str
+    thread_id: str
+    sender: str
+    subject: str
+    body: str
+    received_at: datetime
+
+    # Usa a nova sintaxe do Pydantic v2 que você já está utilizando
+    model_config = ConfigDict(from_attributes=True)
+
+
+# 2. Schema para a requisição do endpoint de ENVIO de e-mail
+class SendEmailRequest(BaseModel):
+    receiver: EmailStr  # Valida automaticamente se o e-mail é válido
+    subject: str
+    body: str
