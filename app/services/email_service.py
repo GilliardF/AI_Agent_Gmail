@@ -185,3 +185,26 @@ def send_new_email(service, to: str, subject: str, body_text: str):
         print(f"Ocorreu um erro ao enviar o novo e-mail: {error}")
         # Lança a exceção para que o endpoint possa tratá-la
         raise ConnectionError(f"Falha ao enviar e-mail: {error}")
+    
+def send_new_email(service, to: str, subject: str, body_text: str):
+    """
+    Cria e envia um novo e-mail (não é uma resposta).
+    """
+    try:
+        message = MIMEText(body_text)
+        message['to'] = to
+        message['from'] = 'me'  # 'me' se refere à conta autenticada do agente
+        message['subject'] = subject
+
+        # Codifica a mensagem no formato esperado pela API do Gmail
+        raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
+        body = {'raw': raw_message}
+
+        # Executa o envio
+        sent_message = service.users().messages().send(userId='me', body=body).execute()
+        print(f"Novo e-mail enviado com sucesso para {to}. Message ID: {sent_message['id']}")
+        return sent_message
+    except HttpError as error:
+        print(f"Ocorreu um erro ao enviar o novo e-mail: {error}")
+        # Lança a exceção para que o endpoint no router possa tratá-la adequadamente
+        raise ConnectionError(f"Falha ao enviar e-mail: {error}")
