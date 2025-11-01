@@ -4,7 +4,8 @@ CREATE TABLE accounts (
     name VARCHAR(100),
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL, -- Senha encriptada pelo Backend
-    encrypted_credentials BYTEA,
+    forward_url VARCHAR(2048), -- URL de webhook específica do agente
+    encrypted_credentials BYTEA, -- Credenciais criptografadas do Google
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP -- Carimbo Data/Hora de Criação
 );
 -- Tabela de Mensagens Recebidas

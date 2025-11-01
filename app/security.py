@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+from sqlalchemy.orm import Session
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
@@ -8,11 +9,12 @@ from cryptography.fernet import Fernet, InvalidToken
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
+from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 from app.config import settings
+from app import models, crud
 
 # --- SEÇÃO 1: HASHING DE SENHAS (Argon2) ---
 ph = PasswordHasher()
@@ -49,43 +51,60 @@ def decrypt_data(encrypted_data: bytes) -> dict:
         raise ValueError(f"Erro ao descriptografar dados: {e}")
 
 # --- SEÇÃO 3: AUTENTICAÇÃO COM API DO GOOGLE (GMAIL) ---
-TOKEN_FILE = Path("token.json")
+def create_google_auth_flow() -> Flow:
+    """Cria uma instância do fluxo de autorização do Google."""
+    credentials_path = Path(settings.GMAIL_CREDENTIALS_PATH).resolve()
+    if not credentials_path.exists():
+        raise FileNotFoundError(
+            f"Arquivo de credenciais do Google não encontrado em: '{credentials_path}'."
+        )
+    
+    flow = Flow.from_client_secrets_file(
+        client_secrets_file=credentials_path,
+        scopes=settings.GMAIL_API_SCOPES.split(','),
+        redirect_uri=settings.GOOGLE_REDIRECT_URI
+    )
+    return flow
 
-def get_gmail_service():
+def get_agent_gmail_service(agent: models.Account, db: Session):
     """
-    Realiza o fluxo de autenticação OAuth2 para a API do Gmail e retorna
-    um objeto de serviço para interagir com a API.
-
-    Gerencia um arquivo 'token.json' para armazenar as credenciais do usuário.
+    Constrói um serviço da API do Gmail para um agente específico usando as
+    credenciais criptografadas armazenadas no banco de dados.
+    Gerencia a renovação do token de acesso, se necessário.
     """
-    creds = None
-    if TOKEN_FILE.exists():
-        creds = Credentials.from_authorized_user_file(str(TOKEN_FILE), settings.GMAIL_API_SCOPES.split(','))
+    if not agent.encrypted_credentials:
+        raise ConnectionError(f"O agente '{agent.email}' não autorizou o acesso ao Gmail.")
 
+    # Descriptografa as credenciais do banco
+    creds_dict = decrypt_data(agent.encrypted_credentials)
+    creds = Credentials.from_authorized_user_info(creds_dict, settings.GMAIL_API_SCOPES.split(','))
+
+    # Se as credenciais expiraram e um refresh_token existe, renova.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
+            try:
+                creds.refresh(Request())
+                # CRUCIAL: Se o token foi renovado, salve as novas credenciais no banco
+                new_creds_dict = {
+                    'token': creds.token,
+                    'refresh_token': creds.refresh_token,
+                    'token_uri': creds.token_uri,
+                    'client_id': creds.client_id,
+                    'client_secret': creds.client_secret,
+                    'scopes': creds.scopes
+                }
+                agent.encrypted_credentials = encrypt_data(new_creds_dict)
+                db.commit()
+                db.refresh(agent)
+                print(f"Token para o agente {agent.email} foi renovado com sucesso.")
+            except Exception as e:
+                # Se a renovação falhar (ex: token revogado), limpe as credenciais
+                agent.encrypted_credentials = None
+                db.commit()
+                raise ConnectionError(f"Não foi possível renovar o token para o agente {agent.email}. Por favor, autorize novamente. Erro: {e}")
         else:
-            if not Path(settings.GMAIL_CREDENTIALS_PATH).exists():
-                raise FileNotFoundError(
-                    f"Arquivo de credenciais do Google não encontrado em: '{settings.GMAIL_CREDENTIALS_PATH}'. "
-                    "Faça o download do seu 'credentials.json' no Google Cloud Console e "
-                    "coloque-o no diretório raiz do projeto."
-                )
-            flow = InstalledAppFlow.from_client_secrets_file(
-                settings.GMAIL_CREDENTIALS_PATH, settings.GMAIL_API_SCOPES.split(',')
-            )
-            # Verifica se as credenciais são do tipo correto
-            if not flow.client_config.get("installed"):
-                raise TypeError(
-                    "Tipo de credencial inválido. O arquivo 'credentials.json' parece ser para um 'Aplicativo Web'. "
-                    "Para esta aplicação, gere credenciais para um 'Aplicativo para computador' no Google Cloud Console."
-                )
-
-            creds = flow.run_local_server(port=0, open_browser=False)
-        
-        with TOKEN_FILE.open("w") as token:
-             token.write(creds.to_json())
+            # Não há credenciais válidas ou refresh_token
+            raise ConnectionError(f"Credenciais inválidas para o agente {agent.email}. Por favor, autorize o acesso.")
 
     try:
         service = build("gmail", "v1", credentials=creds)

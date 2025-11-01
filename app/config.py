@@ -21,12 +21,11 @@ class Settings(BaseSettings):
     # --- Configurações da API do Gmail ---
     GMAIL_CREDENTIALS_PATH: str = "credentials.json"
     GMAIL_API_SCOPES: str = "https://www.googleapis.com/auth/gmail.modify"
-
-    # --- Configurações do Agente ---
-    FORWARD_POST_URL: str | None = None
+    GOOGLE_REDIRECT_URI: str = "http://127.0.0.1:9000/agents/auth/google/callback"
 
     # --- Chave da API do Google (Gemini) ---
     GOOGLE_API_KEY: str
+    GEMINI_MODEL_NAME: str = "gemini-2.5-flash" # Modelo rápido, eficiente e de baixo custo.
 
     @property
     def database_url(self) -> str:

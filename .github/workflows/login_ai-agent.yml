@@ -29,9 +29,9 @@ jobs:
       - name: Log in to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_... }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_... }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_... }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       # Loga no seu Azure Container Registry (ACR)
       - name: Log in to ACR
@@ -54,9 +54,9 @@ jobs:
       - name: Log in to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_... }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_... }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_... }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       # Configura TODAS as variáveis de ambiente que sua aplicação precisa
       - name: Set Web App settings
@@ -70,7 +70,7 @@ jobs:
               { "name": "POSTGRES_USER", "value": "${{ secrets.POSTGRES_USER }}" },
               { "name": "POSTGRES_PASSWORD", "value": "${{ secrets.POSTGRES_PASSWORD }}" },
               { "name": "POSTGRES_HOST", "value": "${{ secrets.POSTGRES_HOST }}" },
-              { "name": "POSTGRES_PORT", "value": "5432" },
+              { "name": "POSTGRES_PORT", "value": "5432" }, # Porta padrão do PostgreSQL no Azure
               { "name": "ENCRYPTION_KEY", "value": "${{ secrets.ENCRYPTION_KEY }}" },
               { "name": "WEBSITES_PORT", "value": "8000" },
               { "name": "GOOGLE_API_KEY", "value": "${{ secrets.GOOGLE_API_KEY }}" }

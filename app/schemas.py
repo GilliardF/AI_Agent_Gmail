@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict, HttpUrl
 from app.models import ForwardStatusEnum
 
 
@@ -11,6 +11,7 @@ class AgentBase(BaseModel):
 class AgentCreate(AgentBase):
     password: str
     name: str
+    forward_url: HttpUrl | None = None
 
 
 class AgentLogin(AgentBase):
@@ -27,9 +28,9 @@ class GmailCredentials(BaseModel):
 class AgentResponse(AgentBase):
     id: int
     name: str
+    forward_url: str | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # --- Schemas para E-mail Recebido ---
@@ -49,8 +50,7 @@ class ReceivedEmail(ReceivedEmailBase):
     id: int
     is_read: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # --- Schemas para Resumo de E-mail ---
@@ -69,8 +69,7 @@ class EmailSummary(EmailSummaryBase):
     status_message: str | None = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SummarizeAndForwardResponse(BaseModel):
     message: str
