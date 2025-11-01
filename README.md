@@ -90,7 +90,9 @@ Esta é a etapa mais importante.
     -   Em **"URIs de redirecionamento autorizados"**, adicione `http://127.0.0.1:9000/agents/auth/google/callback`.
     -   Clique em "Criar" e **"FAZER O DOWNLOAD DO JSON"**.
 6.  **MUITO IMPORTANTE:** Renomeie o arquivo baixado para `credentials.json` e mova-o para a **raiz do seu projeto**.
-
+    
+    > **⚠️ Aviso de Segurança:** O arquivo `credentials.json` contém segredos. Ele já está listado no `.gitignore` para impedir que seja enviado ao repositório. **Nunca remova esta linha do `.gitignore` e nunca compartilhe este arquivo.**
+ 
 ### 4. Configurar Variáveis de Ambiente (`.env`)
 
 Primeiro, crie uma cópia do arquivo de exemplo:
