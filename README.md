@@ -1,257 +1,209 @@
-----
 # AI Agent para Gmail
 
-!Python
-!FastAPI
-!PostgreSQL
-!Docker
-!GitHub Actions
+<p align="left">
+  <img src="https://img.shields.io/badge/Python-3.13+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.13+">
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi" alt="FastAPI">
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker">
+  <img src="https://img.shields.io/badge/GitHub%20Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white" alt="GitHub Actions">
+</p>
 
-Este projeto é uma API de backend construída com **FastAPI** que cria e gerencia "Agentes de IA". Cada agente pode se conectar de forma segura a uma conta do Gmail para ler e-mails não lidos, resumi-los usando um modelo de linguagem (LLM) como o Google Gemini e encaminhar os resumos para um webhook pré-definido.
+Este projeto é uma API de backend construída com **FastAPI** que cria e gerencia "Agentes de IA" multi-usuário. Cada agente pode autorizar o acesso à sua própria conta do Gmail de forma segura via OAuth 2.0. A aplicação lê os e-mails não lidos de cada agente, **utiliza um modelo de linguagem (LLM) como o Google Gemini para gerar uma resposta coerente** e, em seguida, **envia essa resposta de volta ao remetente original**, automatizando a comunicação.
 
 ---
 
 ## 📜 Tabela de Conteúdos
 
 - ✨ Funcionalidades Principais
-- 🛠️ Tecnologias Utilizadas
+- 🛠️ Pilha de Tecnologias
 - ⚙️ Guia de Instalação e Execução Local
-  - Pré-requisitos
-  - Passo 1: Clonar o Repositório
-  - Passo 2: Configurar Credenciais da API do Google
-  - Passo 3: Configurar Variáveis de Ambiente (.env)
-  - Passo 4: Gerar a Chave de Criptografia
-  - Passo 5: Instalar Dependências
-  - Passo 6: Iniciar o Banco de Dados com Docker
-  - Passo 7: Rodar a Aplicação
 - 🚀 Como Usar a API
-  - 1. Registrar um Novo Agente
-  - 2. Acionar o Processamento de E-mails
+- 🧪 Como Rodar os Testes Automatizados
 - ☁️ Deploy (CI/CD com GitHub Actions)
 
 ---
 
 ## ✨ Funcionalidades Principais
 
-- **🤖 Gestão de Agentes:** Crie e gerencie múltiplos agentes, cada um com suas próprias credenciais e configurações.
-- **📧 Automação de E-mail:**
-  - **Leitura Inteligente:** Conecta-se a uma conta do Gmail e busca apenas e-mails não lidos para processamento.
-  - **Sumarização com IA:** Utiliza a API do Google Gemini para gerar resumos concisos e inteligentes em português.
-  - **Encaminhamento via Webhook:** Envia os resumos gerados para uma URL de destino (`POST`), permitindo integração com outros sistemas (Slack, Discord, etc.).
+- **🤖 Gestão Multi-Agente:** Crie e gerencie múltiplos agentes, cada um com seu próprio login e **conexão independente a uma conta do Gmail**.
+- **📧 Automação de Resposta por Agente:**
+  - **Conexão Segura e Individual:** Cada agente autoriza o acesso à sua própria caixa de entrada via OAuth 2.0. As credenciais nunca são compartilhadas.
+  - **Leitura Inteligente:** Busca apenas e-mails não lidos para processamento.
+  - **Geração de Respostas com IA:** Usa a API do Google Gemini para gerar respostas contextuais e coerentes em português.
+  - **Envio Automático:** Envia a resposta gerada diretamente para o remetente original, mantendo a conversa na mesma *thread* do e-mail.
   - **Marcação Automática:** Marca os e-mails como lidos no Gmail após o processamento para evitar duplicidade.
 - **🔒 Segurança Robusta:**
   - **Hashing de Senhas:** Senhas de agentes são protegidas com **Argon2**, um algoritmo moderno e seguro.
-  - **Autenticação OAuth 2.0:** Utiliza o fluxo de autorização padrão do Google para acessar a API do Gmail, garantindo que as senhas do Google nunca sejam armazenadas.
-  - **Criptografia de Credenciais:** Tokens de acesso e refresh do Google são criptografados com **AES (via Fernet)** antes de serem salvos no banco de dados.
-- **📦 Containerização e Deploy:**
-  - Configuração pronta para rodar o banco de dados PostgreSQL com Docker Compose.
-  - Workflow de CI/CD para GitHub Actions que automatiza o build da imagem Docker e o deploy para o Azure App Service.
+  - **Autenticação OAuth 2.0 por Agente:** Utiliza o fluxo de autorização padrão do Google, e as credenciais de cada agente são **criptografadas com Fernet (AES)** e armazenadas individualmente no banco de dados.
+- **📦 Ambiente de Desenvolvimento e Testes:**
+  - Banco de dados PostgreSQL gerenciado com Docker Compose para desenvolvimento.
+  - Testes automatizados com `pytest` que rodam em um banco de dados SQLite em memória para isolamento e velocidade.
+- **☁️ CI/CD (Exemplo):**
+  - Workflow de exemplo para GitHub Actions que automatiza o build da imagem Docker e o deploy para o Azure App Service.
 
-## 🛠️ Tecnologias Utilizadas
+## 🛠️ Pilha de Tecnologias
 
-| Categoria | Tecnologia |
-| :---------------- | :--------------------------------------- |
-| **Backend** | FastAPI, Uvicorn |
-| **Banco de Dados**| PostgreSQL |
-| **ORM** | SQLAlchemy |
-| **Validação** | Pydantic |
-| **Segurança** | Argon2 (Hashing), Fernet (Criptografia) |
-| **APIs Externas** | Google Gmail API, Google Gemini API |
-| **Container** | Docker, Docker Compose |
-| **CI/CD** | GitHub Actions |
+| Categoria             | Tecnologia                                   |
+| :-------------------- | :------------------------------------------- |
+| **Backend**           | FastAPI, Uvicorn                             |
+| **Banco de Dados**    | PostgreSQL                                   |
+| **ORM**               | SQLAlchemy                                   |
+| **Validação**         | Pydantic, Pydantic-Settings                  |
+| **Segurança**         | Argon2 (Hashing), Cryptography (Fernet)      |
+| **APIs Externas**     | Google Gmail API, Google Gemini API          |
+| **Container**         | Docker, Docker Compose                       |
+| **Testes**            | Pytest, Pytest-Asyncio, HTTPX                |
+| **CI/CD (Exemplo)**   | GitHub Actions                               |
 
 ## ⚙️ Guia de Instalação e Execução Local
 
-Siga estes passos detalhados para configurar e executar o projeto em seu ambiente de desenvolvimento.
+Siga estes passos detalhados para configurar e executar o projeto.
 
-### Pré-requisitos
+### 1. Pré-requisitos
 
-Antes de começar, garanta que você tenha as seguintes ferramentas instaladas:
-
-- Python 3.13+
+- Python 3.11+
 - Docker e Docker Compose
 - Git
-- Uma Conta Google para os testes.
+- Uma Conta Google para testes.
 
-### Passo 1: Clonar o Repositório
+### 2. Clonar o Repositório
 
 ```bash
-git clone https://github.com/seu-usuario/AI_Agent_Gmail.git
+git clone https://github.com/GilliardF/AI_Agent_Gmail.git
 cd AI_Agent_Gmail
 ```
 
-### Passo 2: Configurar Credenciais da API do Google
+### 3. Configurar Credenciais da API do Google
 
-Esta é a etapa mais importante para permitir que a aplicação acesse o Gmail.
+Esta é a etapa mais importante.
 
 1.  Acesse o **Google Cloud Console**.
-2.  Crie um novo projeto (ou selecione um existente).
-3.  No menu de busca, procure por **"Gmail API"** e ative-a para o seu projeto.
-4.  No menu lateral, vá para **"APIs e serviços" > "Tela de permissão OAuth"**:
-    -   Selecione **"Externo"** e clique em "Criar".
-    -   Preencha as informações obrigatórias (nome do app, e-mail de suporte).
-    -   Na tela de **"Escopos"**, clique em "Adicionar ou remover escopos". Procure por `https://www.googleapis.com/auth/gmail.modify` e adicione-o. Este escopo permite ler e modificar e-mails (necessário para marcar como lido).
-    -   Salve e continue.
-    -   Na tela de **"Usuários de teste"**, adicione o endereço de e-mail da Conta Google que você usará para testar. **Este passo é crucial para que a autenticação funcione durante o desenvolvimento.**
-5.  Agora, vá para **"APIs e serviços" > "Credenciais"**:
+2.  Crie um novo projeto ou selecione um existente.
+3.  Ative a **Gmail API** e a **Generative Language API** para o seu projeto.
+4.  Vá para **"APIs e serviços" > "Tela de permissão OAuth"**:
+    -   Selecione **"Externo"** e preencha as informações obrigatórias.
+    -   Na tela de **"Escopos"**, adicione o escopo `https://mail.google.com/`. **Este escopo é essencial**, pois permite ler, modificar e **enviar** e-mails.
+    -   Na tela de **"Usuários de teste"**, adicione o e-mail da Conta Google que você usará para os testes.
+5.  Vá para **"APIs e serviços" > "Credenciais"**:
     -   Clique em **"+ CRIAR CREDENCIAIS"** e selecione **"ID do cliente OAuth"**.
-    -   Em "Tipo de aplicativo", escolha **"Aplicativo para computador"**.
-    -   Dê um nome para a credencial (ex: "AI Agent Local").
-    -   Clique em "Criar".
-6.  Uma janela pop-up aparecerá. Clique em **"FAZER O DOWNLOAD DO JSON"**.
-7.  **MUITO IMPORTANTE:** Renomeie o arquivo baixado para `credentials.json` e mova-o para a **raiz do seu projeto**.
+    -   Tipo de aplicativo: **"Aplicativo da Web"**.
+    -   Em **"URIs de redirecionamento autorizados"**, adicione `http://127.0.0.1:9000/agents/auth/google/callback`.
+    -   Clique em "Criar" e **"FAZER O DOWNLOAD DO JSON"**.
+6.  **MUITO IMPORTANTE:** Renomeie o arquivo baixado para `credentials.json` e mova-o para a **raiz do seu projeto**.
 
-### Passo 3: Configurar Variáveis de Ambiente (.env)
+### 4. Configurar Variáveis de Ambiente (`.env`)
 
-Crie um arquivo chamado `.env` na raiz do projeto. Copie o conteúdo do exemplo abaixo e substitua os valores conforme indicado.
-
-```ini
-# .env - Arquivo de configuração de ambiente
-
-# --- Configurações do Banco de Dados PostgreSQL ---
-# Estes valores devem corresponder ao que está em docker-compose.yml
-POSTGRES_DB=db_gmail_agent
-POSTGRES_USER=gilliard
-POSTGRES_PASSWORD=sua_senha_forte_aqui # Use uma senha complexa com letras, números e símbolos
-POSTGRES_HOST=localhost # Para rodar a API localmente. Se a API rodar em Docker, mude para 'db'.
-POSTGRES_PORT=5130
-
-# --- Chave de Criptografia ---
-# Gere uma chave única com o comando no Passo 4 e cole o resultado aqui.
-ENCRYPTION_KEY=
-
-# --- Configurações da API do Gmail ---
-# Caminho para o arquivo JSON que você baixou do Google Cloud.
-GMAIL_CREDENTIALS_PATH=credentials.json
-# Escopos de permissão. O 'modify' permite ler e marcar como lido.
-GMAIL_API_SCOPES=https://www.googleapis.com/auth/gmail.modify
-
-# --- Configurações do Agente ---
-# URL do webhook que receberá os resumos dos e-mails via POST.
-# Use um serviço como https://webhook.site para gerar uma URL de teste.
-FORWARD_POST_URL="https://webhook.site/seu-uuid-aqui"
-
-# --- Chave da API do Google (Gemini) ---
-# Necessária para a funcionalidade de resumo. Obtenha em https://aistudio.google.com/app/apikey
-GOOGLE_API_KEY="sua-chave-aqui"
-```
-
-### Passo 4: Gerar a Chave de Criptografia
-
-Execute este comando no terminal para gerar uma chave segura. Ela será usada para criptografar os tokens do Google no banco de dados.
+Primeiro, crie uma cópia do arquivo de exemplo:
 
 ```bash
-python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+cp .env.example .env
 ```
 
-Copie a chave gerada e cole-a no campo `ENCRYPTION_KEY` do seu arquivo `.env`.
+Agora, edite o arquivo `.env` e preencha os valores:
 
-### Passo 5: Instalar Dependências
+-   `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`: Credenciais para o banco de dados.
+-   `GEMINI_API_KEY`: Sua chave de API para o Google Gemini (pode ser obtida no [Google AI Studio](https://aistudio.google.com/app/apikey)).
+-   `ENCRYPTION_KEY`: Execute o comando abaixo para gerar uma chave segura e cole o resultado aqui.
+    ```bash
+    python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+    ```
 
-É uma boa prática usar um ambiente virtual para isolar as dependências do projeto.
+### 5. Instalar Dependências
+
+Use um ambiente virtual para isolar os pacotes do projeto.
 
 ```bash
-# Crie um ambiente virtual
+# Crie e ative um ambiente virtual
 python3 -m venv venv
-
-# Ative o ambiente (macOS/Linux)
 source venv/bin/activate
-# No Windows, use: .\venv\Scripts\activate
+# No Windows: .\venv\Scripts\activate
 
-# Instale os pacotes necessários
+# Instale os pacotes
 pip install -r requirements.txt
 ```
 
-### Passo 6: Iniciar o Banco de Dados com Docker
-
-O `docker-compose.yml` está configurado para ler as variáveis do banco de dados do seu arquivo `.env` e iniciar um contêiner PostgreSQL.
+### 6. Iniciar o Banco de Dados com Docker
 
 ```bash
-# Inicia o contêiner do PostgreSQL em segundo plano (-d)
 docker compose up -d db
 ```
 
-Para verificar se o contêiner está rodando, use `docker ps`. Você deverá ver um contêiner chamado `ai_agent_gmail-db-1` com o status "Up".
-
-### Passo 7: Rodar a Aplicação
-
-Com o banco de dados rodando e as dependências instaladas, inicie o servidor FastAPI.
+### 7. Rodar a Aplicação
 
 ```bash
-# O comando uvicorn inicia o servidor.
-# --reload faz com que ele reinicie automaticamente após salvar alterações no código.
 uvicorn app.main:app --host 0.0.0.0 --port 9000 --reload
 ```
 
-A API estará disponível em `http://127.0.0.1:8000`.
-
-Acesse a documentação interativa (Swagger UI) em **http://127.0.0.1:8000/docs** para explorar e testar a API.
+A API estará disponível em `http://127.0.0.1:9000`.
+Acesse a documentação interativa (Swagger UI) em **http://127.0.0.1:9000/docs**.
 
 ---
 
 ## 🚀 Como Usar a API
 
-Use a documentação interativa (`/docs`) para testar os endpoints facilmente.
+O fluxo de uso envolve 3 etapas: **Registrar**, **Autorizar** e **Processar**.
 
-### 1. Registrar um Novo Agente
+### Etapa 1: Registrar um Novo Agente (`POST /agents/register`)
 
-- **Endpoint:** `POST /agents/register`
-- **Descrição:** Cria um novo agente no sistema.
-- **Corpo da Requisição:**
-  ```json
-  {
-    "email": "agente007@email.com",
-    "password": "uma_senha_bem_forte_123",
-    "name": "Agente de Teste 007"
-  }
-  ```
-- **Resposta:** Você receberá os dados do agente criado, incluindo seu `id`. Guarde este `id` para o próximo passo.
+Crie um agente no sistema.
 
-### 2. Acionar o Processamento de E-mails
-
-- **Endpoint:** `POST /agents/{agent_id}/process-emails`
-- **Descrição:** Inicia o fluxo de leitura, resumo e encaminhamento de e-mails não lidos.
-- **Parâmetro de URL:** `agent_id` (o ID do agente registrado no passo anterior).
-
-#### ⚠️ Atenção na Primeira Execução!
-
-Na **primeira vez** que você chamar este endpoint, o fluxo de autorização OAuth 2.0 será iniciado no terminal onde o `uvicorn` está rodando:
-
-1.  Uma mensagem aparecerá no terminal pedindo para você visitar uma URL do Google.
-    ```
-    Please visit this URL to authorize this application: https://accounts.google.com/o/oauth2/auth?response_type=code&...
-    ```
-2.  **Copie esta URL** e cole-a em um navegador web.
-3.  Faça login com a conta Google que você configurou como **usuário de teste**.
-4.  Conceda as permissões que a aplicação está solicitando (para ler e modificar e-mails).
-5.  Após a autorização, você será redirecionado para uma página local e o terminal confirmará o sucesso. Um arquivo `token.json` será criado na raiz do projeto.
-
-**As execuções futuras serão automáticas!** O sistema usará o `token.json` para se autenticar sem precisar da sua intervenção.
-
-### Exemplo de Resposta
-
-```json
-{
-  "message": "Processamento concluído. 2 e-mails processados.",
-  "processed_emails": 2,
-  "summaries_created": [
+-   **Endpoint:** `POST /agents/register`
+-   **Corpo da Requisição:**
+    ```json
     {
-      "received_email_id": 1,
-      "summary_text": "O e-mail da equipe de marketing informa sobre a nova campanha de primavera, com lançamento previsto para a próxima semana. É solicitado que a equipe de design finalize os criativos até quarta-feira. O sentimento geral é de urgência e otimismo.",
-      "forward_url": "https://webhook.site/seu-uuid-aqui",
-      "id": 1,
-      "forward_status": "success",
-      "status_message": "Encaminhado com sucesso. Status: 200",
-      "created_at": "2024-10-26T15:30:00Z"
-    },
-    {
-      "received_email_id": 2,
-      "summary_text": "...",
-      "id": 2
+      "email": "meu.agente@email.com",
+      "password": "uma_senha_bem_forte_123",
+      "name": "Agente de Teste"
     }
-  ]
-}
+    ```
+-   **Resposta:** Você receberá os dados do agente, incluindo seu `id`. Guarde este `id`.
+
+### Etapa 2: Autorizar o Acesso ao Gmail (`GET /agents/{agent_id}/authorize/google`)
+
+Esta etapa conecta a conta do agente à sua conta do Gmail. **Ela só precisa ser feita uma vez (ou novamente se a permissão for revogada).**
+
+1.  Use `curl` no seu terminal para obter a URL de autorização. Substitua `{agent_id}` pelo ID obtido na etapa anterior.
+
+    ```bash
+    # Exemplo para o agente com ID = 1
+    curl -X GET "http://127.0.0.1:9000/agents/1/authorize/google"
+    ```
+
+2.  A resposta será um JSON contendo a URL:
+
+    ```json
+    {
+      "authorization_url": "https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=..."
+    }
+    ```
+
+3.  **Copie a URL completa** da resposta e cole-a em um navegador.
+4.  Faça login com a conta Google que você configurou como **usuário de teste**.
+5.  Conceda as permissões que a aplicação está solicitando.
+6.  Após a autorização, você será redirecionado para uma página de sucesso, e as credenciais seguras serão salvas no banco de dados para este agente.
+
+### Etapa 3: Acionar o Processamento de E-mails (`POST /agents/{agent_id}/process-emails`)
+
+-   **Endpoint:** `POST /agents/{agent_id}/process-emails`
+-   **Descrição:** Inicia o fluxo de leitura, geração de resposta e envio de e-mails não lidos.
+-   **Exemplo de Resposta:**
+    ```json
+    {
+      "message": "Processamento concluído. 2 e-mails foram processados e respondidos."
+    }
+    ```
+
+---
+
+## 🧪 Como Rodar os Testes Automatizados
+
+O projeto utiliza `pytest` com um banco de dados SQLite em memória para testes rápidos e isolados.
+
+```bash
+pytest
 ```
+
+---
 
 ## ☁️ Deploy (CI/CD com GitHub Actions)
 
@@ -259,16 +211,9 @@ O repositório contém um workflow em `.github/workflows/login_ai-agent.yml` par
 
 **Como funciona:**
 1.  **Gatilho:** O workflow é acionado a cada `push` na branch `login`.
-2.  **Job `build-and-push`:**
-    -   Faz o checkout do código.
-    -   Loga no Azure e no Azure Container Registry (ACR).
-    -   Constrói uma imagem Docker da aplicação.
-    -   Envia a imagem para o seu ACR com uma tag única (o hash do commit).
-3.  **Job `deploy`:**
-    -   Loga no Azure novamente.
-    -   Configura as variáveis de ambiente no App Service (puxando de GitHub Secrets).
-    -   Implanta a nova imagem Docker do ACR para o App Service.
+2.  **Job `build-and-push`:** Constrói uma imagem Docker e a envia para um Azure Container Registry (ACR).
+3.  **Job `deploy`:** Implanta a nova imagem Docker do ACR para o Azure App Service.
 
 **Para usar este workflow, você precisa:**
-1.  Criar os recursos necessários no Azure (App Service, Azure Container Registry, PostgreSQL).
-2.  Configurar os **secrets** no seu repositório do GitHub (`AZUREAPPSERVICE_CLIENTID`, `POSTGRES_USER`, etc.) para que o GitHub Actions possa se autenticar e configurar a aplicação em produção.
+1.  Criar os recursos no Azure (App Service, ACR, PostgreSQL).
+2.  Configurar os **secrets** no seu repositório do GitHub (`AZUREAPPSERVICE_CLIENTID`, `POSTGRES_USER`, etc.).

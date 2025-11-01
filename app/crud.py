@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from google.oauth2.credentials import Credentials
 from app import models, schemas, security
 
 def get_agent_by_email(db: Session, email: str) -> models.Account | None:
@@ -12,12 +13,30 @@ def create_agent(db: Session, agent: schemas.AgentCreate) -> models.Account:
     db_agent = models.Account(
         email=agent.email,
         name=agent.name,
-        password_hash=hashed_password
+        password_hash=hashed_password,
+        forward_url=str(agent.forward_url) if agent.forward_url else None
     )
     db.add(db_agent)
     db.commit()
     db.refresh(db_agent)
     return db_agent
+
+def update_agent_credentials(db: Session, agent: models.Account, creds: Credentials) -> models.Account:
+    """
+    Converte as credenciais do Google para um dicionário, criptografa e salva no agente.
+    """
+    creds_dict = {
+        'token': creds.token,
+        'refresh_token': creds.refresh_token,
+        'token_uri': creds.token_uri,
+        'client_id': creds.client_id,
+        'client_secret': creds.client_secret,
+        'scopes': creds.scopes
+    }
+    agent.encrypted_credentials = security.encrypt_data(creds_dict)
+    db.commit()
+    db.refresh(agent)
+    return agent
 
 # --- CRUD para E-mails Recebidos ---
 

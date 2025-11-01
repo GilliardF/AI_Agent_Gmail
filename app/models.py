@@ -22,6 +22,7 @@ class Account(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    forward_url = Column(String(2048), nullable=True) # URL para encaminhar resumos
 
     received_emails = relationship("ReceivedEmail", back_populates="account", cascade="all, delete-orphan")
     outgoing_emails = relationship("OutgoingEmail", back_populates="account", cascade="all, delete-orphan")
