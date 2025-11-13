@@ -85,8 +85,6 @@ class EmailDetails(BaseModel):
     subject: str
     body: str
     received_at: datetime
-
-    # Usa a nova sintaxe do Pydantic v2 que você já está utilizando
     model_config = ConfigDict(from_attributes=True)
 
 
