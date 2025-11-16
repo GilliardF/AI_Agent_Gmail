@@ -1,0 +1,30 @@
+# .env - Arquivo de configuração de ambiente
+
+# --- Configurações do Banco de Dados PostgreSQL ---
+# Estes valores devem corresponder ao que está em docker-compose.yml
+POSTGRES_DB=db-gmail
+POSTGRES_USER=gilliard
+POSTGRES_PASSWORD=
+# Use 'localhost' para rodar a API localmente. Se a API rodar em Docker, mude para 'db'.
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5130
+
+# --- Chave de Criptografia ---
+# ESSENCIAL: Gere uma chave única com o comando no Passo 4 do README e cole o resultado aqui.
+ENCRYPTION_KEY=<sua chave aqui>
+
+
+# --- Configurações da API do Gmail ---
+# O padrão já é 'credentials.json', então esta linha é opcional se o nome do arquivo for esse.
+GMAIL_CREDENTIALS_PATH=<credentials.json>
+# O padrão já é o escopo 'modify', então esta linha também é opcional.
+GMAIL_API_SCOPES=https://mail.google.com/
+
+# --- Configurações do Agente ---
+# (Opcional) URL do webhook que receberá os resumos dos e-mails via POST.
+# Use um serviço como https://webhook.site para gerar uma URL de teste.
+FORWARD_POST_URL=https://webhook.site/seu-uuid-aqui
+
+# --- Chave da API do Google (Gemini) ---
+# Necessária para a funcionalidade de resumo. Obtenha em https://aistudio.google.com/app/apikey
+GOOGLE_API_KEY=<sua-chave-apikey-aqui>
