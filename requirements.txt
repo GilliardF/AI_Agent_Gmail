@@ -9,6 +9,7 @@ psycopg2-binary==2.9.10 # Para conexão com PostgreSQL
 # Validação e Configuração
 pydantic==2.11.7
 pydantic-settings==2.10.1
+email-validator==2.2.0 # Dependência para validação de e-mail com Pydantic
 python-dotenv==1.1.1
 
 # Segurança
@@ -25,3 +26,4 @@ httpx==0.27.0 # Para fazer requisições HTTP assíncronas
 # Ferramentas de Teste
 pytest
 pytest-asyncio
+pytest-mock

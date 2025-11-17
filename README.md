@@ -197,12 +197,26 @@ Esta etapa conecta a conta do agente à sua conta do Gmail. **Ela só precisa se
 
 ---
 
-## 🧪 Como Rodar os Testes Automatizados
+## 🧪 Como Rodar os Testes Automatizados (Executando o Projeto em Modo de Teste)
 
-O projeto utiliza `pytest` com um banco de dados SQLite em memória para testes rápidos e isolados.
+O projeto possui uma suíte de testes completa que utiliza `pytest`. Ao executar os testes, você está, na prática, **executando uma versão de teste da sua aplicação** em um ambiente controlado e seguro.
+
+**O que acontece durante os testes:**
+-   A aplicação FastAPI é carregada em memória.
+-   Um **banco de dados SQLite em memória** é criado e destruído para cada teste, garantindo total isolamento e não afetando seu banco de dados de desenvolvimento (PostgreSQL).
+-   Chamadas para APIs externas (como Google Gmail e Gemini) são **simuladas (mocked)**, permitindo testar a lógica da sua API sem depender de serviços externos ou de uma conexão com a internet.
+
+### Como Executar
+
+1.  Certifique-se de que seu ambiente virtual (`venv`) está ativado.
+2.  Verifique se todas as dependências, incluindo as de teste, estão instaladas:
+    ```bash
+    pip install -r requirements.txt
+    ```
+3.  Execute o Pytest na raiz do projeto. Use a flag `-v` para um output mais detalhado:
 
 ```bash
-pytest
+python -m pytest -v
 ```
 
 ---

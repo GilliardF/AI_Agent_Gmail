@@ -34,13 +34,10 @@ def test_client(db_session):
     Fixture para criar um cliente de teste com o banco de dados de teste.
     Usa a fixture db_session para garantir que o banco de dados é criado e limpo.
     """
-    def override_get_db():
-        try:
-            yield db_session
-        finally:
-            pass # A sessão é fechada pelo fixture db_session
+    def _override_get_db():
+        yield db_session
 
-    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_db] = _override_get_db
     client = TestClient(app)
     yield client
     # Limpa o override após o teste
